@@ -1,6 +1,7 @@
 #include <iostream>
-#include <vector>
 #include <cstring>
+#include <vector>
+#include <math.h>
 #define MAX 20
 
 using namespace std;
@@ -54,10 +55,46 @@ int Priority (char _alpha)
     return 0;
 }
 
-string Postfix(vector<string> _infix)
+float Value(vector<string> _postfix){
+    float a, b;
+    vector<float> num;
+
+    char cNum[] = "0123456789";
+    char cSym[] = "+-/%*";
+
+    for(auto sprtd : _postfix){
+        char chr[strlen(sprtd.c_str())];
+        strcpy(chr, sprtd.c_str());
+
+        if(strspn(chr, cSym) && sizeof(chr) == 1){
+            a = num.back();
+            num.pop_back();
+            b = num.back();
+            num.pop_back();
+
+            if(chr[0] == '+'){
+                num.push_back(b + a);
+            }else if(chr[0] == '-'){
+                num.push_back(b - a);
+            }else if(chr[0] == '*'){
+                num.push_back(b * a);
+            }else if(chr[0] == '/'){
+                num.push_back(b / a);
+            }else if(chr[0] == '%'){
+                num.push_back(fmod(b, a));
+            }
+        }else{
+            num.push_back(atof(sprtd.c_str()));
+        }
+    }
+
+    return num.back();
+}
+
+float Postfix(vector<string> _infix)
 {
     vector<string> postfix;
-    string postfixData, data;
+    string data;
 
     int i = 0;
 
@@ -134,77 +171,61 @@ string Postfix(vector<string> _infix)
         postfix.push_back(data);
     }
 
-    i = 0;
+    return Value(postfix);
+}
 
-    for(auto x : postfix){
-        postfixData += x;
-        
-        if((unsigned)i != postfix.size()){
-            postfixData += " ";
+vector<string> Separating(string _input){
+    vector<string> sprtd;
+    string data;
+    bool isNumEnd = false;
+
+    int i = 0;
+
+    char cNum[] = "0123456789";
+    char cSym[] = "(+-/%*";
+    char chr[1];
+    
+    while(_input[i] != '\0'){
+        chr[0] = _input[i];
+
+        if(strspn(chr, cNum) && chr[0] != ' '){
+            data += _input[i];
+            isNumEnd = true;
+
+            if((unsigned)i == strlen(_input.c_str()) - 1){
+                sprtd.push_back(data);
+            }
+        }else if(chr[0] != ' '){
+            if(isNumEnd){
+                sprtd.push_back(data);
+                isNumEnd = false;
+            }
+
+            data = _input[i];
+            sprtd.push_back(data);
+
+            data = "";
+
+            if(i > 0){
+                chr[0] = _input[i - 1];
+
+                if(_input[i] != '(' && strspn(chr, cSym)){
+                    sprtd.push_back("1");
+                    sprtd.push_back("*");
+                }
+            }
         }
 
         i++;
     }
-
-    return postfixData;
-}
-
-void Separating(string _input){
-    vector<char> sprtd;
-    string data;
-
-    char cNum[] = "0123456789";
-    char cSym[] = "+-/%*";
-    char cSpc[] = "()";
-    char chr[1];
     
-
-    for(int i = 0; i < strlen(_input.c_str()); i++){
-        chr[0] = _input[i];
-
-        if(strspn(chr, cSym) || strspn(chr, cNum) || strspn(chr, cSpc)){
-            sprtd.push_back(_input[i]);
-        }
-    }
-    
-    for (int i = 0; i != sprtd.size(); i++){    
-        chr[0] = sprtd[i];
-
-        if((strspn(chr, cSym) || sprtd[i] == ')') && sprtd[i] != '(' && i > 0){
-            data += " ";
-        }
-        
-        if(strspn(chr, cNum)){
-            data += sprtd[i];
-        }else{
-            data += sprtd[i];
-
-            if(i > 0){
-                chr[0] = sprtd[i - 1];
-
-                if(sprtd[i] != '(' && strspn(chr, cSym)){
-                    data += "1 * ";
-                }else if(sprtd[i] != ')'){
-                    chr[0] = sprtd[i + 1];
-
-                    if(!strspn(chr, cSym)){
-                        data += " ";
-                    }
-                }
-            }else if(sprtd[i + 1] == '('){
-                data += "1 * ";                
-            }
-        }
-    }
-
-    cout << data << endl;
+    return sprtd;
 }
 
 int main(){
     string input;
 
-    getline(cin, input);
- 
+    getline(cin, input); 
     
-    Separating(input);
+    cout << Postfix(Separating(input)) << endl;
 }
